@@ -1,0 +1,15 @@
+# Runtime
+fastapi
+uvicorn[standard]
+pydantic
+PyYAML
+torch
+transformers
+peft
+bitsandbytes
+accelerate
+datasets
+
+# Development / testing
+pytest
+httpx

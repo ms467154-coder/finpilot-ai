@@ -1,0 +1,32 @@
+# Phase 6 - Model evaluation configuration.
+# Consumed by src/evaluation/evaluate.py. Evaluates the Phase 5 fine-tuned model
+# against the held-out test split + curated prompts with qualitative/advice-style
+# metrics (NOT numeric financial-correctness profiling).
+
+evaluation:
+  adapter_dir: models/fine_tuned/final
+  base_precision: bfloat16          # dtype used when loading the base model
+  quantization: null                # null | 4bit | 8bit (base load only)
+
+  test_file: data/processed/formatted/test.jsonl
+  curated_dir: data/evaluation      # *.jsonl files of curated prompts
+  curated_sources: ["prompts"]      # stems (without .jsonl) to include
+
+  output_dir: outputs/evaluation
+  plots_dir: outputs/plots
+  results_file: results.json        # per-example + aggregate + by-category
+  results_csv: results.csv          # flattened per-example table
+
+  # generation settings for producing responses
+  max_new_tokens: 200
+  do_sample: false                  # greedy for deterministic evaluation
+  temperature: 1.0
+  top_p: 1.0
+
+  # metrics to compute per example
+  metrics: [length, coherence, keyword_coverage, relevance, rubric]
+
+  # optional LLM-as-judge (uses the *untuned base* model as a neutral rubric
+  # judge; disabled by default because it needs extra GPU time)
+  enable_llm_judge: false
+  llm_judge_max_new_tokens: 64

@@ -1,0 +1,48 @@
+# Phase 4 - Model setup configuration.
+# Consumed by src/model/model_loader.py (load_model / load_tokenizer).
+#
+# Base model choice: a small, instruction-tunable, open-weight causal LM with a
+# proper chat template. Qwen2.5-0.5B-Instruct is chosen because it fits the
+# 6 GB laptop GPU comfortably at bf16 (and even leaves headroom for a 4-bit
+# LoRA fine-tune in Phase 5) while still being a modern instruct model.
+#
+# Artifacts are cached/downloaded under `model.cache_dir` (models/base).
+
+model:
+  base_model: "Qwen/Qwen2.5-0.5B-Instruct"
+  cache_dir: "models/base"           # downloaded base model artifacts live here
+  trust_remote_code: false           # set true only for checkpoints requiring it
+  device: "auto"                     # "auto" | "cuda" | "cpu"
+
+  precision:
+    load_dtype: "auto"               # "auto" | "float16" | "bfloat16" | "float32"
+                                     # "auto" = dtype advertised by the checkpoint (bf16 for Qwen2.5)
+    quantization: null               # null | "4bit" | "8bit"  (bitsandbytes; null = full precision)
+    bnb_4bit_compute_dtype: "float16"
+    bnb_4bit_quant_type: "nf4"
+    bnb_4bit_use_double_quant: true
+
+  # Extra kwargs forwarded verbatim to AutoModelForCausalLM.from_pretrained.
+  load_extra_kwargs: {}
+
+generation:
+  max_new_tokens: 256
+  do_sample: true
+  temperature: 0.7
+  top_p: 0.9
+  top_k: 50
+  repetition_penalty: 1.1
+  pad_token_id: null                 # null = resolved at load time (tokenizer.eos_token_id)
+
+# Phase 7 - inference-time parameters. Consumed by src/inference/inference.py.
+inference:
+  adapter_dir: "models/fine_tuned/final"   # LoRA/full checkpoint to serve
+  system_prompt: null              # null = built-in financial-advisor persona
+                                   # (src/inference/prompt_templates.py); never requests salary/income/expenses
+  max_new_tokens: 256
+  do_sample: true
+  temperature: 0.6
+  top_p: 0.9
+  top_k: 50
+  repetition_penalty: 1.1
+  history_max_turns: 6             # cap on prior user/assistant turns kept for multi-turn context

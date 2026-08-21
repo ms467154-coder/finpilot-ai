@@ -1,0 +1,79 @@
+# Data configuration for the Financial Advice Chatbot
+# ------------------------------------------------------
+# Phase 2 — Data Cleaning parameters.
+#
+# These values are merged over the built-in defaults in
+# `src/data/cleaning.py::DEFAULT_CONFIG` (YAML keys override matching keys).
+#
+# Scope reminder: this chatbot is a conversational Q&A system, NOT a financial
+# profiler. `profiling_exclusion` drops records framed as numeric personal
+# financial-profile tasks (salary / income / expense / net-worth / risk-score
+# prediction).
+
+cleaning:
+  # --- deduplication ------------------------------------------------
+  dedup:
+    enabled: true
+    threshold: 0.92        # fuzzy question-similarity threshold (0..1)
+    use_fuzzy: true        # near-duplicate question detection via difflib
+    block_prefix: 8        # prefix width of normalized question used as fuzzy bucket
+
+  # --- text / encoding ----------------------------------------------
+  text:
+    normalize_unicode: NFKC        # compose + map smart quotes/dashes/ellipsis to ASCII
+    collapse_whitespace: true      # collapse runs of spaces; single-line for Q/A fields
+    max_newlines: 2                # cap consecutive newlines in auxiliary text fields
+    strip_control_chars: true
+    remove_html: true
+    remove_urls: true
+
+  # --- PII ----------------------------------------------------------
+  pii:
+    redact: true            # replaces emails/phones/SSN/cards/IPs with [KIND]
+                            # placeholders
+
+  # --- quality / low-quality filtering ------------------------------
+  filtering:
+    min_question_chars: 15        # questions shorter than this are dropped
+    max_question_chars: 5000      # pathological essays are dropped
+    min_answer_words: 3           # answers with fewer words are dropped
+    max_answer_chars: 12000       # runaway answers are dropped
+    min_alpha_ratio: 0.55         # min fraction of alphabetic chars in a question
+    min_financial_hits: 1         # min financial-lexicon hits to count as in-domain
+
+  # --- numeric personal-financial profiling exclusion ----------------
+  profiling_exclusion:
+    enabled: true
+
+  # --- per-source overrides ------------------------------------------
+  sources:
+    financebench:
+      filtering:
+        min_answer_words: 1       # answers are terse numeric facts ("$1577.00")
+        min_financial_hits: 0     # curated, expert-verified benchmark: all in-domain
+
+# (raw / processed paths are resolved by the notebooks, not configured here)
+
+# Phase 3 — Dataset Formatting parameters.
+#
+# Schema versioning: bump `format.schema` when the JSONL record layout changes
+# so downstream consumers can detect incompatible data.
+formatting:
+  # --- output schema ---------------------------------------------------
+  format:
+    schema: chat-v1            # {id, source, messages:[...]}
+                              # messages = [{user: question}, {assistant: answer}]
+                              # (optionally prefixed by `system_prompt`)
+    system_prompt: null        # optional fixed persona/instruction string; when
+                              # set it is prepended as a `system` message.
+                              # Leave null here and set it during fine-tuning
+                              # to avoid baking a prompt into the trained data.
+
+  # --- train/val/test split --------------------------------------------
+  split:
+    train: 0.8
+    val: 0.1
+    test: 0.1
+    seed: 42                  # deterministic shuffling
+    stratify_by_source: true  # each split keeps a proportional slice of every
+                              # source (financebench / fiqa / personal-finance)

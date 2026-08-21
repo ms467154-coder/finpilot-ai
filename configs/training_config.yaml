@@ -1,0 +1,47 @@
+# Phase 5 - Fine-tuning configuration.
+# Consumed by src/training/train.py. Merged over the defaults there, so any
+# key can be omitted or overridden per run via CLI flags (--epochs, --lr, ...).
+
+training:
+  method: lora                 # "lora" (PEFT, fits the 6 GB GPU) | "full"
+  system_prompt: null          # optional advisor persona prepended to every sample
+                               # (null = leave the chat-v1 records exactly as formatted)
+  max_length: 512              # prompt+response token budget (right-truncated from the response)
+  seed: 42
+
+  num_train_epochs: 3
+  batch_size: 4                # per-device
+  gradient_accumulation_steps: 1
+  learning_rate: 2.0e-4
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  bf16: true
+  fp16: false
+  gradient_checkpointing: false
+  logging_steps: 5
+  log_level: info
+
+  eval_strategy: epoch         # "epoch" | "steps" | "no"
+  eval_steps: 50
+  save_strategy: epoch         # "epoch" | "steps" | "no"
+  save_total_limit: 2
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+
+  train_file: data/processed/formatted/train.jsonl
+  val_file:   data/processed/formatted/val.jsonl
+
+  output_dir: models/fine_tuned
+  logging_dir: logs
+  loss_curve_file: logs/training_losses.jsonl   # per-step train/eval loss dump (JSONL)
+  loss_curve_image: logs/loss_curve.png          # matplotlib loss curve (best effort)
+
+lora:
+  r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  target_modules: all-linear   # or explicit list, e.g. ["q_proj", "v_proj"]
+  bias: none
+  task_type: CAUSAL_LM

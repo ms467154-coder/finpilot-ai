@@ -1,0 +1,25 @@
+# Phase 13 - Conversational memory configuration.
+# Consumed by src/memory/retriever.py (load_memory_config).
+
+memory:
+  # Number of relevant memories injected into the LLM context.
+  top_k: 3
+
+  # Minimum relevance score (0-1) for a memory to be retrieved for a message.
+  relevance_threshold: 0.18
+
+  # Minimum similarity for a new candidate to be treated as a near-duplicate
+  # of an existing memory (update it instead of storing a second copy).
+  dedup_similarity_threshold: 0.5
+
+  # Cap on recent user/assistant turns kept in the LLM context window.
+  max_turns_in_context: 6
+
+  # Default user id when /chat is called without one.
+  default_user_id: "anonymous"
+
+  # Baseline importance for extracted memories when no category-specific weight applies.
+  default_importance: 0.6
+
+  # Retrieval backend: "keyword" (swappable via build_retriever).
+  retriever: "keyword"
